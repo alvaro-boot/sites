@@ -1,0 +1,62 @@
+/* Panel lateral page_beneficios_vigilancia — imagen del guarda */
+
+.ben-scene-media {
+    flex: 1 1 0;
+    min-height: clamp(160px, 28vh, 280px);
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse 70% 60% at 50% 40%, rgba(34, 211, 238, 0.1), transparent 62%),
+        linear-gradient(165deg, rgba(8, 14, 28, 0.9) 0%, rgba(4, 8, 16, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ben-scene-media--has-img .ben-scene-placeholder {
+    display: none;
+}
+
+.ben-scene-img {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+    display: block;
+}
+
+.ben-scene-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    color: rgba(226, 232, 240, 0.55);
+    text-align: center;
+    z-index: 1;
+}
+
+.ben-scene-placeholder i {
+    font-size: clamp(3rem, 10vw, 4.5rem);
+    color: var(--cootravir-gold-light, #e8c96a);
+    filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.35));
+    opacity: 0.85;
+}
+
+.ben-scene-placeholder small {
+    font-size: clamp(0.68rem, 1.1vw, 0.78rem);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+#ben-3d-root {
+    display: none !important;
+}

@@ -1,0 +1,251 @@
+/* Panel lateral page_2b — ¿Por qué elegir COOTRAVIR? (también en editor de propuestas) */
+
+.p2b-aside {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.p2b-why-card {
+    position: relative;
+    min-height: 0;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+    flex: 1 1 auto;
+}
+
+.p2b-why-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(6, 182, 212, 0.12);
+    border-radius: var(--radius-panel, 14px);
+}
+
+.p2b-why-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+    padding: 4px 8px 14px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.p2b-why-head #p2b-why-title {
+    font-family: var(--font-display, "Sora", system-ui, sans-serif);
+    font-weight: 700;
+    font-size: clamp(0.95rem, 1.65vw, 1.12rem);
+    line-height: 1.35;
+    letter-spacing: 0.03em;
+    color: #f8fafc;
+    margin: 0;
+    max-width: 22ch;
+    text-wrap: balance;
+}
+
+.p2b-why-head #p2b-why-title::after {
+    content: "";
+    display: block;
+    width: 48px;
+    height: 2px;
+    margin: 10px auto 0;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #d4af37, #5eead4, #d4af37, transparent);
+    opacity: 0.85;
+}
+
+.p2b-why-badge {
+    font-family: var(--font-display, "Sora", system-ui, sans-serif);
+    font-size: clamp(0.56rem, 0.95vw, 0.66rem);
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #e8c96a;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    background: rgba(212, 175, 55, 0.1);
+    padding: 4px 12px;
+    border-radius: 999px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.12);
+}
+
+.p2b-why-stack {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 175, 55, 0.35) transparent;
+}
+
+.p2b-why-stack::-webkit-scrollbar {
+    width: 5px;
+}
+
+.p2b-why-stack::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.35);
+    border-radius: 4px;
+}
+
+.p2b-why-cuerpo,
+.p2b-why-puntos {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(0, 0, 0, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.p2b-why-cuerpo {
+    flex-shrink: 0;
+    padding: 18px 20px 20px;
+    text-align: center;
+    background:
+        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(212, 175, 55, 0.12), transparent 60%),
+        linear-gradient(180deg, rgba(14, 24, 48, 0.55) 0%, rgba(6, 10, 20, 0.75) 100%);
+    border-color: rgba(212, 175, 55, 0.15);
+}
+
+.p2b-why-cuerpo-text {
+    max-width: 36em;
+    margin: 0 auto;
+}
+
+.p2b-why-cuerpo-text p {
+    margin: 0;
+    font-size: clamp(0.82rem, 1.32vw, 0.94rem);
+    line-height: 1.75;
+    color: #e2e8f0;
+    letter-spacing: 0.015em;
+}
+
+.p2b-why-cuerpo-text p + p {
+    margin-top: 1em;
+    padding-top: 1em;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+}
+
+.p2b-why-cuerpo-text strong {
+    font-weight: 700;
+    color: #f5d78e;
+}
+
+.p2b-why-puntos {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 14px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(34, 211, 238, 0.06), transparent 55%),
+        rgba(0, 0, 0, 0.28);
+    border-color: rgba(34, 211, 238, 0.12);
+}
+
+.p2b-why-puntos__label {
+    margin: 0;
+    padding: 0 8px 4px;
+    text-align: center;
+    font-family: var(--font-display, "Sora", system-ui, sans-serif);
+    font-size: clamp(0.66rem, 1.05vw, 0.74rem);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5eead4;
+}
+
+.p2b-why-puntos__label::after {
+    content: "";
+    display: block;
+    width: 32px;
+    height: 1px;
+    margin: 8px auto 0;
+    background: rgba(94, 234, 212, 0.45);
+}
+
+.p2b-why-list,
+.p2b-why-puntos ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.p2b-why-list li,
+.p2b-why-puntos ul li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    padding: 11px 14px;
+    border-radius: 10px;
+    text-align: left;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    font-size: clamp(0.75rem, 1.18vw, 0.85rem);
+    line-height: 1.5;
+    color: #f1f5f9;
+}
+
+.p2b-why-list li:hover,
+.p2b-why-puntos ul li:hover {
+    border-color: rgba(212, 175, 55, 0.28);
+    background: rgba(212, 175, 55, 0.06);
+}
+
+.p2b-why-list li i {
+    flex-shrink: 0;
+    margin-top: 0.1em;
+    width: 1.35rem;
+    height: 1.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.58rem;
+    color: #0f172a;
+    background: linear-gradient(145deg, #e8c96a, #c9a227);
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.35);
+}
+
+.p2b-why-list li::before {
+    content: none;
+    display: none;
+}
+
+.p2b-why-list li span {
+    flex: 1;
+    min-width: 0;
+}
+
+.p2b-why-puntos ul li:not(:has(i))::before {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    flex-shrink: 0;
+    margin-top: 0.1em;
+    width: 1.35rem;
+    height: 1.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.58rem;
+    color: #0f172a;
+    background: linear-gradient(145deg, #e8c96a, #c9a227);
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.35);
+}

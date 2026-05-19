@@ -47,7 +47,7 @@ import {
   type TechProductItem,
   type VisualIconType,
 } from '@/lib/html-editor';
-import { authFetch } from '@/lib/client-api';
+import { authFetch, authUpload } from '@/lib/client-api';
 import { storagePathFromRef } from '@/lib/resolve-storage';
 
 function StorageImagePreview({ src, token }: { src: string; token: string }) {
@@ -306,10 +306,7 @@ export default function VisualEditorPanel({
   async function uploadFile(file: File): Promise<string> {
     const form = new FormData();
     form.append('file', file);
-    const res = await authFetch(`/files/upload/${proposalId}`, {
-      method: 'POST',
-      body: form,
-    });
+    const res = await authUpload(`/files/upload/${proposalId}`, form);
     const data = (await res.json().catch(() => ({}))) as {
       storageRef?: string;
       message?: string | string[];

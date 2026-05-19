@@ -3,8 +3,22 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   'http://localhost:3001';
 
+const PUBLIC_API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_URL ||
+  'http://localhost:3001';
+
 export function getApiUrl() {
   return API_URL.replace(/\/$/, '');
+}
+
+/** URL de la API visible en el navegador (subidas directas en producción). */
+export function getPublicApiUrl() {
+  return PUBLIC_API_URL.replace(/\/$/, '');
+}
+
+export function isLocalApiUrl(url: string) {
+  return /localhost|127\.0\.0\.1/i.test(url);
 }
 
 export async function apiFetch<T>(

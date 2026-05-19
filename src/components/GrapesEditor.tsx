@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Slide } from '@/lib/types';
 import { authFetch, authUpload } from '@/lib/client-api';
+import { prepareImageForUpload } from '@/lib/compress-image';
 import { registerCootravirBlocks } from '@/lib/grapes-blocks';
 
 import 'grapesjs/dist/css/grapes.min.css';
@@ -105,8 +106,9 @@ export default function GrapesEditor({
   }
 
   async function uploadAsset(file: File) {
+    const prepared = await prepareImageForUpload(file);
     const form = new FormData();
-    form.append('file', file);
+    form.append('file', prepared);
     const res = await authUpload(`/files/upload/${proposalId}`, form);
     const data = (await res.json().catch(() => ({}))) as {
       storageRef?: string;

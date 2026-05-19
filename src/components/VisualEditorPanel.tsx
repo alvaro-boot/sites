@@ -48,6 +48,7 @@ import {
   type VisualIconType,
 } from '@/lib/html-editor';
 import { authFetch, authUpload } from '@/lib/client-api';
+import { prepareImageForUpload } from '@/lib/compress-image';
 import { storagePathFromRef } from '@/lib/resolve-storage';
 
 function StorageImagePreview({ src, token }: { src: string; token: string }) {
@@ -304,8 +305,15 @@ export default function VisualEditorPanel({
   }
 
   async function uploadFile(file: File): Promise<string> {
+    const maxBytes = 10 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      throw new Error(
+        `La imagen pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB. El máximo permitido es 10 MB.`,
+      );
+    }
+    const prepared = await prepareImageForUpload(file);
     const form = new FormData();
-    form.append('file', file);
+    form.append('file', prepared);
     const res = await authUpload(`/files/upload/${proposalId}`, form);
     const data = (await res.json().catch(() => ({}))) as {
       storageRef?: string;

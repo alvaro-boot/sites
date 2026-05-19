@@ -501,7 +501,7 @@ export function parseP2bPage(html: string): P2bPageData {
   }
   if (!whyChooseBody) whyChooseBody = DEFAULT_WHY_CHOOSE_BODY;
 
-  let whyChoosePointsLabel =
+  const whyChoosePointsLabel =
     doc.querySelector('#p2b-why-puntos-label')?.textContent?.trim() ||
     legacy?.pointsLabel ||
     aside?.querySelector('.p2b-why-puntos__label, h4')?.textContent?.trim() ||
@@ -701,7 +701,7 @@ export function applyBenScene(html: string, data: BenSceneData): string {
   if (hudSpans[0]) hudSpans[0].textContent = data.hudLeft;
   if (hudSpans[1]) hudSpans[1].textContent = data.hudRight;
 
-  let media = doc.querySelector('#ben-scene-media, #ben-3d-root');
+  const media = doc.querySelector('#ben-scene-media, #ben-3d-root');
   const scene = doc.querySelector('.ben-scene');
   const mediaHtml = renderBenSceneMedia(data);
   if (media) {

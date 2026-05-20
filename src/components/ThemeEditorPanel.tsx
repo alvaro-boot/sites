@@ -13,8 +13,8 @@ import { authFetch } from '@/lib/client-api';
 interface ThemeEditorPanelProps {
   proposalId: string;
   themeConfig: ThemeConfig | null | undefined;
-  onChange?: (theme: ThemeConfig) => void;
-  onSaved: (theme: ThemeConfig) => void;
+  onChange?: (theme: Required<ThemeConfig>) => void;
+  onSaved: (theme: Required<ThemeConfig>) => void;
 }
 
 export default function ThemeEditorPanel({

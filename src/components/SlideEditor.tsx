@@ -21,7 +21,7 @@ interface SlideEditorProps {
   themeConfig?: ThemeConfig | null;
   mapContext?: MapSlideContext | null;
   onMapConfigSaved?: (mapConfig: Record<string, unknown>) => void;
-  onThemeSaved?: (theme: ThemeConfig) => void;
+  onThemeSaved?: (theme: Required<ThemeConfig>) => void;
   onSaved?: (slide: Slide) => void;
 }
 
@@ -202,8 +202,9 @@ export default function SlideEditor({
           themeConfig={theme}
           onChange={setTheme}
           onSaved={(t) => {
-            setTheme(t);
-            onThemeSaved?.(t);
+            const full = mergeTheme(t);
+            setTheme(full);
+            onThemeSaved?.(full);
           }}
         />
       ) : null}

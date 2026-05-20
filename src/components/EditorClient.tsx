@@ -13,7 +13,7 @@ interface EditorClientProps {
   themeConfig?: ThemeConfig | null;
   mapContext?: MapSlideContext | null;
   onMapConfigSaved?: (mapConfig: Record<string, unknown>) => void;
-  onThemeSaved?: (theme: ThemeConfig) => void;
+  onThemeSaved?: (theme: Required<ThemeConfig>) => void;
 }
 
 export default function EditorClient({

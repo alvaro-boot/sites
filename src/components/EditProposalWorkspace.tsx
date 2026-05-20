@@ -23,7 +23,9 @@ export default function EditProposalWorkspace({
 }: EditProposalWorkspaceProps) {
   const slides = [...proposal.slides].sort((a, b) => a.order - b.order);
   const current = slides.find((s) => s.key === currentSlideKey) ?? slides[0];
-  const [theme, setTheme] = useState<ThemeConfig>(() => mergeTheme(proposal.themeConfig));
+  const [theme, setTheme] = useState<Required<ThemeConfig>>(() =>
+    mergeTheme(proposal.themeConfig),
+  );
   const [mapConfig, setMapConfig] = useState<Record<string, unknown> | null>(
     proposal.mapConfig,
   );

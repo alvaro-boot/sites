@@ -1,7 +1,13 @@
 import type { Slide, ThemeConfig } from '@/lib/types';
 import { buildMapContextScript, type MapSlideContext } from '@/lib/map-context';
 import { buildThemeOverrideCss } from '@/lib/theme';
-import { hasAp5Benefits, hasBenScene, hasMapSlide, hasP2bPage } from '@/lib/html-editor';
+import {
+  hasAp5Benefits,
+  hasBenScene,
+  hasMapSlide,
+  hasP2bPage,
+  hasP6Page,
+} from '@/lib/html-editor';
 
 export type SlideDocumentMode = 'present' | 'edit';
 
@@ -35,6 +41,65 @@ function buildP2bCertLoaderScript(): string {
     document.addEventListener("DOMContentLoaded", loadCertPhotos);
   } else {
     loadCertPhotos();
+  }
+})();
+<\/script>`;
+}
+
+/** Carga imagen del guarda desde data-ben-image (URL ya firmada en vista previa). */
+function buildBenSceneImageLoaderScript(): string {
+  return `<script>
+(function () {
+  function loadBenSceneImages() {
+    document.querySelectorAll("#ben-scene-media[data-ben-image], .ben-scene-media[data-ben-image]").forEach(function (media) {
+      var src = (media.getAttribute("data-ben-image") || "").trim();
+      if (!src || src.indexOf("__STORAGE__:") === 0) return;
+      var img = media.querySelector(".ben-scene-img");
+      if (!img) {
+        img = document.createElement("img");
+        img.className = "ben-scene-img";
+        img.alt = media.getAttribute("aria-label") || "Personal de vigilancia COOTRAVIR";
+        img.loading = "lazy";
+        media.appendChild(img);
+      }
+      img.onload = function () {
+        if (!media.isConnected) return;
+        media.classList.add("ben-scene-media--has-img");
+        var ph = media.querySelector(".ben-scene-placeholder");
+        if (ph) ph.style.display = "none";
+      };
+      img.onerror = function () {
+        media.classList.remove("ben-scene-media--has-img");
+        var ph = media.querySelector(".ben-scene-placeholder");
+        if (ph) ph.style.removeProperty("display");
+      };
+      img.src = src;
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadBenSceneImages);
+  } else {
+    loadBenSceneImages();
+  }
+})();
+<\/script>`;
+}
+
+/** Carga logo de cierre desde data-p6-logo-src. */
+function buildP6LogoLoaderScript(): string {
+  return `<script>
+(function () {
+  function loadP6Logos() {
+    document.querySelectorAll("img.p6-logo[data-p6-logo-src]").forEach(function (img) {
+      var src = (img.getAttribute("data-p6-logo-src") || "").trim();
+      if (!src || src.indexOf("__STORAGE__:") === 0) return;
+      img.src = src;
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadP6Logos);
+  } else {
+    loadP6Logos();
   }
 })();
 <\/script>`;
@@ -101,6 +166,12 @@ body.prop-fill { min-height: 100%; display: flex; flex-direction: column; }`;
 
   if (hasP2bPage(slide.html)) {
     bodyScripts.push(buildP2bCertLoaderScript());
+  }
+  if (hasBenScene(slide.html)) {
+    bodyScripts.push(buildBenSceneImageLoaderScript());
+  }
+  if (hasP6Page(slide.html)) {
+    bodyScripts.push(buildP6LogoLoaderScript());
   }
 
   return `<!DOCTYPE html>

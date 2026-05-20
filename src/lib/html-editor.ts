@@ -350,11 +350,16 @@ export function applyTextFields(
 
 export function extractImages(html: string): ImageItem[] {
   const doc = parseHtml(html);
-  return [...doc.querySelectorAll('img')].map((img, index) => ({
-    index,
-    src: img.getAttribute('src') ?? '',
-    alt: img.getAttribute('alt') ?? '',
-  }));
+  return [...doc.querySelectorAll('img')]
+    .filter(
+      (img) =>
+        !img.classList.contains('p6-logo') && !img.classList.contains('ben-scene-img'),
+    )
+    .map((img, index) => ({
+      index,
+      src: img.getAttribute('src') ?? '',
+      alt: img.getAttribute('alt') ?? '',
+    }));
 }
 
 export function replaceImageSrc(html: string, index: number, newSrc: string): string {
@@ -674,12 +679,7 @@ export function parseBenScene(html: string): BenSceneData {
 function renderBenSceneMedia(data: BenSceneData): string {
   const srcAttr = data.imageSrc ? ` data-ben-image="${escapeAttr(data.imageSrc)}"` : '';
   const hasImg = Boolean(data.imageSrc);
-  let inner = '';
-  if (hasImg) {
-    inner +=
-      `<img class="ben-scene-img" src="${escapeAttr(data.imageSrc)}" alt="${escapeAttr(data.imageAlt)}" loading="lazy" onerror="this.style.display='none';this.closest('.ben-scene-media')?.classList.remove('ben-scene-media--has-img')"/>`;
-  }
-  inner +=
+  const inner =
     '<span class="ben-scene-placeholder"><i class="fas fa-user-shield" aria-hidden="true"></i><small>Imagen del guarda (opcional)</small></span>';
   return (
     `<div class="ben-scene-media${hasImg ? ' ben-scene-media--has-img' : ''}" id="ben-scene-media"${srcAttr} role="img" aria-label="${escapeAttr(data.imageAlt)}">` +
@@ -722,6 +722,69 @@ export function applyBenScene(html: string, data: BenSceneData): string {
     }
   }
 
+  return serializeBody(doc);
+}
+
+const DEFAULT_P6_LOGO = '/legacy/images/logo-escudo-cootravir.png';
+
+/** Diapositiva de cierre (page_cierre) — logo del encabezado */
+export interface P6PageData {
+  kicker: string;
+  title: string;
+  logoSrc: string;
+  logoAlt: string;
+  outro: string;
+}
+
+export function hasP6Page(html: string): boolean {
+  return parseHtml(html).querySelector('.p6-logo, .p6-grid') !== null;
+}
+
+export function parseP6Page(html: string): P6PageData {
+  const doc = parseHtml(html);
+  const logo = doc.querySelector('.p6-logo');
+  const logoSrc =
+    logo?.getAttribute('data-p6-logo-src')?.trim() ||
+    logo?.getAttribute('src')?.trim() ||
+    '';
+  return {
+    kicker: doc.querySelector('.p6-kicker')?.textContent?.trim() ?? '',
+    title:
+      doc.querySelector('.p6-head-left h1')?.textContent?.trim() ??
+      doc.querySelector('.soc-header h1')?.textContent?.trim() ??
+      '',
+    logoSrc,
+    logoAlt: logo?.getAttribute('alt')?.trim() ?? 'COOTRAVIR C.T.A. Seguridad privada',
+    outro: doc.querySelector('.p6-outro')?.textContent?.trim() ?? '',
+  };
+}
+
+export function applyP6Page(html: string, data: P6PageData): string {
+  const doc = parseHtml(html);
+  const kicker = doc.querySelector('.p6-kicker');
+  if (kicker) kicker.textContent = data.kicker;
+  const h1 = doc.querySelector('.p6-head-left h1, .soc-header h1');
+  if (h1) h1.textContent = data.title;
+  const outro = doc.querySelector('.p6-outro');
+  if (outro) outro.textContent = data.outro;
+  const logo = doc.querySelector('.p6-logo');
+  if (logo) {
+    if (data.logoAlt) logo.setAttribute('alt', data.logoAlt);
+    if (data.logoSrc) {
+      logo.setAttribute('data-p6-logo-src', data.logoSrc);
+      if (!data.logoSrc.startsWith('__STORAGE__:')) {
+        logo.setAttribute('src', data.logoSrc);
+      } else if (
+        !logo.getAttribute('src') ||
+        logo.getAttribute('src')?.startsWith('__STORAGE__:')
+      ) {
+        logo.setAttribute('src', DEFAULT_P6_LOGO);
+      }
+    } else {
+      logo.removeAttribute('data-p6-logo-src');
+      logo.setAttribute('src', DEFAULT_P6_LOGO);
+    }
+  }
   return serializeBody(doc);
 }
 
@@ -1126,6 +1189,9 @@ export function normalizeSlideHtml(html: string): string {
   }
   if (hasBenScene(out) && (!out.includes('id="ben-scene-media"') || out.includes('id="ben-3d-root"'))) {
     out = applyBenScene(out, parseBenScene(out));
+  }
+  if (hasP6Page(out)) {
+    out = applyP6Page(out, parseP6Page(out));
   }
   return out;
 }

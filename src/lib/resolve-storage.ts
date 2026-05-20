@@ -12,6 +12,29 @@ export function storagePathFromRef(src: string): string | null {
   return decodeURIComponent(src.slice(STORAGE_PREFIX.length));
 }
 
+export function toStorageRef(path: string): string {
+  return `${STORAGE_PREFIX}${path}`;
+}
+
+/**
+ * Antes de guardar en BD: si el HTML trae URLs firmadas de Supabase (p. ej. copiadas
+ * de la vista previa), las convierte de nuevo a __STORAGE__:ruta estable.
+ */
+export function sanitizeHtmlForStorage(html: string): string {
+  if (!html.includes('/storage/v1/object/')) return html;
+
+  return html.replace(
+    /https?:\/\/[^"'\s>]+\/storage\/v1\/object\/(?:sign|public)\/[^/"'\s]+\/([^"'\s]+?)(?:\?[^"'\s>]*)?(?=["'\s>])/g,
+    (_full, objectPath: string) => {
+      try {
+        return toStorageRef(decodeURIComponent(objectPath));
+      } catch {
+        return _full;
+      }
+    },
+  );
+}
+
 /** Pide URLs firmadas nuevas al backend antes de mostrar la diapositiva. */
 export async function resolveStorageInHtml(
   html: string,

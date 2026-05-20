@@ -7,7 +7,7 @@ import type { Slide, ThemeConfig } from '@/lib/types';
 import { authFetch } from '@/lib/client-api';
 import { buildSlideDocument } from '@/lib/slide-document';
 import { normalizeSlideHtml } from '@/lib/html-editor';
-import { resolveStorageInHtml } from '@/lib/resolve-storage';
+import { resolveStorageInHtml, sanitizeHtmlForStorage } from '@/lib/resolve-storage';
 import VisualEditorPanel from './VisualEditorPanel';
 import ThemeEditorPanel from './ThemeEditorPanel';
 
@@ -138,7 +138,11 @@ export default function SlideEditor({
     try {
       const res = await authFetch(`/proposals/${proposalId}/slides/${slide.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ html, css: css || null, grapesData: null }),
+        body: JSON.stringify({
+          html: sanitizeHtmlForStorage(html),
+          css: css || null,
+          grapesData: null,
+        }),
       });
       const updated = (await res.json()) as Slide;
       onSaved?.(updated);

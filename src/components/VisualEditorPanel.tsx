@@ -18,6 +18,9 @@ import {
   hasBenScene,
   parseBenScene,
   applyBenScene,
+  hasP6Page,
+  parseP6Page,
+  applyP6Page,
   hasP2bPage,
   hasP4Economics,
   hasP2Carousel,
@@ -39,6 +42,7 @@ import {
   type BenCardItem,
   type BenRowItem,
   type BenSceneData,
+  type P6PageData,
   type P2bPageData,
   type P2bCertItem,
   type P4EconomicsData,
@@ -113,9 +117,11 @@ export default function VisualEditorPanel({
   const [p4Data, setP4Data] = useState<P4EconomicsData | null>(null);
   const [ap5Data, setAp5Data] = useState<Ap5BenefitsData | null>(null);
   const [benScene, setBenScene] = useState<BenSceneData | null>(null);
+  const [p6Data, setP6Data] = useState<P6PageData | null>(null);
   const showCards = hasBenCards(html);
   const showRows = hasBenRows(html);
   const showBenScene = hasBenScene(html);
+  const showP6 = hasP6Page(html);
   const showP2b = hasP2bPage(html);
   const showP2Carousel = hasP2Carousel(html);
   const showTechCarousel = hasTechCarousel(html);
@@ -135,6 +141,7 @@ export default function VisualEditorPanel({
     setImages(extractImages(html));
     setP2bData(hasP2bPage(html) ? parseP2bPage(html) : null);
     setBenScene(hasBenScene(html) ? parseBenScene(html) : null);
+    setP6Data(hasP6Page(html) ? parseP6Page(html) : null);
   }, [html, fields, slideKey]);
 
   function commitTexts(next: Record<string, string>) {
@@ -164,6 +171,14 @@ export default function VisualEditorPanel({
       typeof patch === 'function' ? patch(current) : { ...current, ...patch };
     setBenScene(resolved);
     patchHtml((h) => applyBenScene(h, resolved));
+  }
+
+  function commitP6(patch: Partial<P6PageData> | ((current: P6PageData) => P6PageData)) {
+    const current = parseP6Page(htmlRef.current);
+    const resolved =
+      typeof patch === 'function' ? patch(current) : { ...current, ...patch };
+    setP6Data(resolved);
+    patchHtml((h) => applyP6Page(h, resolved));
   }
 
   function commitP2Slides(
@@ -387,6 +402,11 @@ export default function VisualEditorPanel({
     });
   }
 
+  async function uploadP6Logo(file: File) {
+    const storageRef = await uploadFile(file);
+    commitP6((current) => ({ ...current, logoSrc: storageRef }));
+  }
+
   return (
     <div className="flex flex-col gap-4 p-3 overflow-y-auto text-sm">
       <section>
@@ -418,6 +438,48 @@ export default function VisualEditorPanel({
           ))}
         </div>
       </section>
+
+      {showP6 && p6Data && (
+        <section>
+          <h3 className="text-xs font-semibold text-amber-400/90 uppercase mb-2">
+            Logo de cierre
+          </h3>
+          <div className="space-y-2 p-2 rounded border border-slate-700 bg-slate-900/40">
+            {p6Data.logoSrc && <StorageImagePreview src={p6Data.logoSrc} token={token} />}
+            <label className="text-xs text-[#4a6fa5] cursor-pointer hover:underline block">
+              {p6Data.logoSrc ? 'Cambiar logo' : 'Subir logo'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  uploadP6Logo(f).catch((err) =>
+                    alert(err instanceof Error ? err.message : 'Error al subir'),
+                  );
+                  e.target.value = '';
+                }}
+              />
+            </label>
+            {p6Data.logoSrc && (
+              <button
+                type="button"
+                className="text-xs text-red-400 hover:underline"
+                onClick={() => commitP6({ logoSrc: '' })}
+              >
+                Restaurar logo por defecto
+              </button>
+            )}
+            <input
+              value={p6Data.logoAlt}
+              placeholder="Texto alternativo del logo"
+              onChange={(e) => commitP6({ logoAlt: e.target.value })}
+              className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
+            />
+          </div>
+        </section>
+      )}
 
       {showP4 && p4Data && (
         <section>
@@ -1338,7 +1400,14 @@ export default function VisualEditorPanel({
         </section>
       )}
 
-      {images.length > 0 && !showP2Carousel && !showTechCarousel && !showP4 && !showAp5 && !showP2b && (
+      {images.length > 0 &&
+        !showP2Carousel &&
+        !showTechCarousel &&
+        !showP4 &&
+        !showAp5 &&
+        !showP2b &&
+        !showP6 &&
+        !showBenScene && (
         <section>
           <h3 className="text-xs font-semibold text-amber-400/90 uppercase mb-2">Imágenes</h3>
           <ul className="space-y-2">
@@ -1399,7 +1468,8 @@ export default function VisualEditorPanel({
                   const f = e.target.files?.[0];
                   if (!f) return;
                   uploadFile(f)
-                    .then((storageRef) => commitBenScene({ imageSrc: storageRef }),
+                    .then((storageRef) =>
+                      commitBenScene((c) => ({ ...c, imageSrc: storageRef })),
                     )
                     .catch((err) =>
                       alert(err instanceof Error ? err.message : 'Error al subir'),

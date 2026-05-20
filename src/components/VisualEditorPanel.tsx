@@ -219,9 +219,11 @@ export default function VisualEditorPanel({
     onHtmlChange(applyAp5Benefits(html, next));
   }
 
-  function commitP2b(next: P2bPageData) {
-    setP2bData(next);
-    onHtmlChange(applyP2bPage(html, next));
+  function commitP2b(next: P2bPageData | ((current: P2bPageData) => P2bPageData)) {
+    const current = parseP2bPage(html);
+    const resolved = typeof next === 'function' ? next(current) : next;
+    setP2bData(resolved);
+    onHtmlChange(applyP2bPage(html, resolved));
   }
 
   const defaultP2bCert = (): P2bCertItem => ({
@@ -335,11 +337,13 @@ export default function VisualEditorPanel({
   }
 
   async function uploadP2bCertLogo(index: number, file: File) {
-    if (!p2bData) return;
     const storageRef = await uploadFile(file);
-    const certs = [...p2bData.certs];
-    certs[index] = { ...certs[index], imageSrc: storageRef };
-    commitP2b({ ...p2bData, certs });
+    commitP2b((current) => {
+      const certs = [...current.certs];
+      if (!certs[index]) return current;
+      certs[index] = { ...certs[index], imageSrc: storageRef };
+      return { ...current, certs };
+    });
   }
 
   return (

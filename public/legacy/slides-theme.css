@@ -196,7 +196,11 @@ body {
     flex-wrap: wrap;
     gap: 12px;
     padding: 14px clamp(16px, 4vw, 28px);
-    background: linear-gradient(90deg, rgba(14, 36, 85, 0.95), rgba(10, 22, 48, 0.88));
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--cootravir-blue) 95%, transparent),
+        color-mix(in srgb, var(--cootravir-blue-darker) 88%, transparent)
+    );
     border-bottom: 1px solid var(--soc-panel-border);
     backdrop-filter: blur(12px);
 }
@@ -390,7 +394,11 @@ body {
 }
 
 .soc-slide.deck-tech .soc-header {
-    background: linear-gradient(90deg, rgba(14, 36, 85, 0.94), rgba(10, 22, 48, 0.88));
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--cootravir-blue) 94%, transparent),
+        color-mix(in srgb, var(--cootravir-blue-darker) 88%, transparent)
+    );
     border-bottom-color: rgba(6, 182, 212, 0.22);
     box-shadow: 0 1px 0 rgba(6, 182, 212, 0.12), 0 12px 40px rgba(0, 0, 0, 0.25);
 }

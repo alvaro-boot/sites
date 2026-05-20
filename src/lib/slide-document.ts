@@ -186,9 +186,9 @@ body.prop-fill { min-height: 100%; display: flex; flex-direction: column; }`;
   ${isMap ? '<link href="/legacy/css/mapa-slide-layout.css" rel="stylesheet"/>' : ''}
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"><\/script>
-  <style>${buildThemeOverrideCss(themeConfig)}
-${baseLayout}
-${slide.css ?? ''}</style>
+  <style>${baseLayout}
+${slide.css ?? ''}
+${buildThemeOverrideCss(themeConfig)}</style>
   ${headScripts.join('\n')}
 </head>
 <body class="prop-fill">

@@ -477,7 +477,7 @@ export default function VisualEditorPanel({
                       ...current.periods,
                       { labelHtml: 'Total mensual <strong>nuevo periodo</strong>', amount: '$ 0' },
                     ],
-                  })
+                  }))
                 }
               >
                 + Periodo

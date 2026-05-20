@@ -6,6 +6,7 @@ import EditorClient from '@/components/EditorClient';
 import ProposalToolbar from '@/components/ProposalToolbar';
 import SlideListSidebar from '@/components/SlideListSidebar';
 import type { Proposal, ThemeConfig } from '@/lib/types';
+import { mergeTheme } from '@/lib/theme';
 
 interface EditProposalWorkspaceProps {
   proposal: Proposal;
@@ -22,7 +23,7 @@ export default function EditProposalWorkspace({
 }: EditProposalWorkspaceProps) {
   const slides = [...proposal.slides].sort((a, b) => a.order - b.order);
   const current = slides.find((s) => s.key === currentSlideKey) ?? slides[0];
-  const [theme, setTheme] = useState<ThemeConfig | null>(proposal.themeConfig ?? null);
+  const [theme, setTheme] = useState<ThemeConfig>(() => mergeTheme(proposal.themeConfig));
   const [mapConfig, setMapConfig] = useState<Record<string, unknown> | null>(
     proposal.mapConfig,
   );

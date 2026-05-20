@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MapSlideContext } from '@/lib/map-context';
 import type { Slide, ThemeConfig } from '@/lib/types';
 import { buildSlideDocument } from '@/lib/slide-document';
+import { mergeTheme } from '@/lib/theme';
 import { resolveStorageInHtmlPublic } from '@/lib/resolve-storage';
 
 interface DeckViewerProps {
@@ -81,10 +82,11 @@ export default function DeckViewer({
     );
   }
 
+  const theme = mergeTheme(themeConfig);
   const srcDoc = buildSlideDocument(
     { ...slide, html: resolvedHtml || slide.html },
     'present',
-    themeConfig,
+    themeConfig ? theme : null,
     slide.key === 'mapa-pereira' ? mapContext ?? null : null,
   );
   const progress = ((index + 1) / activeSlides.length) * 100;

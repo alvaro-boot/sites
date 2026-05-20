@@ -6,6 +6,7 @@ import type { MapSlideContext } from '@/lib/map-context';
 import type { Slide, ThemeConfig } from '@/lib/types';
 import { authFetch } from '@/lib/client-api';
 import { buildSlideDocument } from '@/lib/slide-document';
+import { mergeTheme } from '@/lib/theme';
 import { normalizeSlideHtml } from '@/lib/html-editor';
 import { resolveStorageInHtml, sanitizeHtmlForStorage } from '@/lib/resolve-storage';
 import VisualEditorPanel from './VisualEditorPanel';
@@ -36,7 +37,7 @@ export default function SlideEditor({
 }: SlideEditorProps) {
   const [html, setHtml] = useState(slide.html);
   const [css, setCss] = useState(slide.css ?? '');
-  const [theme, setTheme] = useState(themeConfig);
+  const [theme, setTheme] = useState(() => mergeTheme(themeConfig));
   const [tab, setTab] = useState<EditorTab>('visual');
   const [codePanel, setCodePanel] = useState<'html' | 'css'>('html');
   const [saving, setSaving] = useState(false);
@@ -62,7 +63,7 @@ export default function SlideEditor({
   }, [html, token]);
 
   useEffect(() => {
-    setTheme(themeConfig);
+    setTheme(mergeTheme(themeConfig));
   }, [themeConfig]);
 
   useEffect(() => {

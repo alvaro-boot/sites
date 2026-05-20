@@ -21,14 +21,39 @@ export interface Slide {
   enabled: boolean;
 }
 
+/** Paleta completa de la propuesta (se guarda en theme_config JSON por propuesta). */
 export interface ThemeConfig {
+  /* Marca */
   cootravirBlue?: string;
   cootravirBlueLight?: string;
   cootravirGold?: string;
   cootravirGoldLight?: string;
+  /* Fondos */
   backgroundDeep?: string;
   backgroundMid?: string;
+  backgroundCard?: string;
+  backgroundCardStrong?: string;
+  backgroundHeader?: string;
+  /* Textos */
   text?: string;
+  textTitle?: string;
+  textSubtitle?: string;
+  textMuted?: string;
+  textAccent?: string;
+  /* Iconos */
+  iconColor?: string;
+  iconAccent?: string;
+  /* Bordes */
+  borderPanel?: string;
+  borderAccent?: string;
+  /* Animaciones / efectos */
+  accentAnimation?: string;
+  accentAnimationAlt?: string;
+  accentGlow?: string;
+  /* Gráficos y barras */
+  chartBarBlue?: string;
+  chartBarMid?: string;
+  chartBarGold?: string;
 }
 
 export interface Proposal {

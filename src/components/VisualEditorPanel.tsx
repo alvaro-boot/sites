@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FA_ICONS,
   applyAp5Benefits,
@@ -94,6 +94,15 @@ export default function VisualEditorPanel({
   proposalId,
   token,
 }: VisualEditorPanelProps) {
+  const htmlRef = useRef(html);
+  htmlRef.current = html;
+
+  function patchHtml(mutator: (currentHtml: string) => string) {
+    const next = mutator(htmlRef.current);
+    htmlRef.current = next;
+    onHtmlChange(next);
+  }
+
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [cards, setCards] = useState<BenCardItem[]>([]);
   const [rows, setRows] = useState<BenRowItem[]>([]);
@@ -130,32 +139,49 @@ export default function VisualEditorPanel({
 
   function commitTexts(next: Record<string, string>) {
     setTexts(next);
-    onHtmlChange(applyTextFields(html, fields, next));
+    patchHtml((h) => applyTextFields(h, fields, next));
   }
 
-  function commitCards(next: BenCardItem[]) {
-    setCards(next);
-    onHtmlChange(applyBenCards(html, next));
+  function commitCards(next: BenCardItem[] | ((current: BenCardItem[]) => BenCardItem[])) {
+    const current = parseBenCards(htmlRef.current);
+    const resolved = typeof next === 'function' ? next(current) : next;
+    setCards(resolved);
+    patchHtml((h) => applyBenCards(h, resolved));
   }
 
-  function commitRows(next: BenRowItem[]) {
-    setRows(next);
-    onHtmlChange(applyBenRows(html, next));
+  function commitRows(next: BenRowItem[] | ((current: BenRowItem[]) => BenRowItem[])) {
+    const current = parseBenRows(htmlRef.current);
+    const resolved = typeof next === 'function' ? next(current) : next;
+    setRows(resolved);
+    patchHtml((h) => applyBenRows(h, resolved));
   }
 
-  function commitBenScene(next: BenSceneData) {
-    setBenScene(next);
-    onHtmlChange(applyBenScene(html, next));
+  function commitBenScene(
+    patch: Partial<BenSceneData> | ((current: BenSceneData) => BenSceneData),
+  ) {
+    const current = parseBenScene(htmlRef.current);
+    const resolved =
+      typeof patch === 'function' ? patch(current) : { ...current, ...patch };
+    setBenScene(resolved);
+    patchHtml((h) => applyBenScene(h, resolved));
   }
 
-  function commitP2Slides(next: P2CarouselSlideItem[]) {
-    setP2Slides(next);
-    onHtmlChange(applyP2CarouselSlides(html, next));
+  function commitP2Slides(
+    next: P2CarouselSlideItem[] | ((current: P2CarouselSlideItem[]) => P2CarouselSlideItem[]),
+  ) {
+    const current = parseP2CarouselSlides(htmlRef.current);
+    const resolved = typeof next === 'function' ? next(current) : next;
+    setP2Slides(resolved);
+    patchHtml((h) => applyP2CarouselSlides(h, resolved));
   }
 
-  function commitTechProducts(next: TechProductItem[]) {
-    setTechProducts(next);
-    onHtmlChange(applyTechProducts(html, next));
+  function commitTechProducts(
+    next: TechProductItem[] | ((current: TechProductItem[]) => TechProductItem[]),
+  ) {
+    const current = parseTechProducts(htmlRef.current);
+    const resolved = typeof next === 'function' ? next(current) : next;
+    setTechProducts(resolved);
+    patchHtml((h) => applyTechProducts(h, resolved));
   }
 
   const defaultP2Slide = (): P2CarouselSlideItem => ({
@@ -207,23 +233,38 @@ export default function VisualEditorPanel({
     webglKind: 'gift',
   });
 
-  function commitP4(next: P4EconomicsData) {
-    const chartTotal = next.chartTotal || parseMoney(next.subtotalValue);
-    const payload = { ...next, chartTotal };
-    setP4Data(payload);
-    onHtmlChange(applyP4Economics(html, payload));
+  function commitP4(
+    patch: Partial<P4EconomicsData> | ((current: P4EconomicsData) => P4EconomicsData),
+  ) {
+    const current = parseP4Economics(htmlRef.current);
+    let resolved =
+      typeof patch === 'function' ? patch(current) : { ...current, ...patch };
+    resolved = {
+      ...resolved,
+      chartTotal: resolved.chartTotal || parseMoney(resolved.subtotalValue),
+    };
+    setP4Data(resolved);
+    patchHtml((h) => applyP4Economics(h, resolved));
   }
 
-  function commitAp5(next: Ap5BenefitsData) {
-    setAp5Data(next);
-    onHtmlChange(applyAp5Benefits(html, next));
+  function commitAp5(
+    patch: Partial<Ap5BenefitsData> | ((current: Ap5BenefitsData) => Ap5BenefitsData),
+  ) {
+    const current = parseAp5Benefits(htmlRef.current);
+    const resolved =
+      typeof patch === 'function' ? patch(current) : { ...current, ...patch };
+    setAp5Data(resolved);
+    patchHtml((h) => applyAp5Benefits(h, resolved));
   }
 
-  function commitP2b(next: P2bPageData | ((current: P2bPageData) => P2bPageData)) {
-    const current = parseP2bPage(html);
-    const resolved = typeof next === 'function' ? next(current) : next;
+  function commitP2b(
+    patch: Partial<P2bPageData> | ((current: P2bPageData) => P2bPageData),
+  ) {
+    const current = parseP2bPage(htmlRef.current);
+    const resolved =
+      typeof patch === 'function' ? patch(current) : { ...current, ...patch };
     setP2bData(resolved);
-    onHtmlChange(applyP2bPage(html, resolved));
+    patchHtml((h) => applyP2bPage(h, resolved));
   }
 
   const defaultP2bCert = (): P2bCertItem => ({
@@ -333,7 +374,7 @@ export default function VisualEditorPanel({
 
   async function uploadAndReplace(index: number, file: File) {
     const storageRef = await uploadFile(file);
-    onHtmlChange(replaceImageSrc(html, index, storageRef));
+    patchHtml((h) => replaceImageSrc(h, index, storageRef));
   }
 
   async function uploadP2bCertLogo(index: number, file: File) {
@@ -387,7 +428,9 @@ export default function VisualEditorPanel({
             <button
               type="button"
               className="text-xs text-[#4a6fa5] hover:underline"
-              onClick={() => commitP4({ ...p4Data, services: [...p4Data.services, defaultP4Service()] })}
+              onClick={() =>
+                commitP4((c) => ({ ...c, services: [...c.services, defaultP4Service()] }))
+              }
             >
               + Línea de servicio
             </button>
@@ -398,25 +441,24 @@ export default function VisualEditorPanel({
               rows={2}
               value={p4Data.summaryEyebrowHtml ?? ''}
               placeholder="Etiqueta resumen (HTML)"
-              onChange={(e) => commitP4({ ...p4Data, summaryEyebrowHtml: e.target.value })}
+              onChange={(e) => commitP4({ summaryEyebrowHtml: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs font-mono mb-1"
             />
             <input
               value={p4Data.cardTitle ?? ''}
               placeholder="Título del panel"
-              onChange={(e) => commitP4({ ...p4Data, cardTitle: e.target.value })}
+              onChange={(e) => commitP4({ cardTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm mb-1"
             />
             <input
               value={p4Data.subtotalLabel}
-              onChange={(e) => commitP4({ ...p4Data, subtotalLabel: e.target.value })}
+              onChange={(e) => commitP4({ subtotalLabel: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs mb-1"
             />
             <input
               value={p4Data.subtotalValue}
               onChange={(e) =>
                 commitP4({
-                  ...p4Data,
                   subtotalValue: e.target.value,
                   chartTotal: parseMoney(e.target.value),
                 })
@@ -429,10 +471,10 @@ export default function VisualEditorPanel({
                 type="button"
                 className="text-xs text-[#4a6fa5] hover:underline"
                 onClick={() =>
-                  commitP4({
-                    ...p4Data,
+                  commitP4((current) => ({
+                    ...current,
                     periods: [
-                      ...p4Data.periods,
+                      ...current.periods,
                       { labelHtml: 'Total mensual <strong>nuevo periodo</strong>', amount: '$ 0' },
                     ],
                   })
@@ -448,18 +490,22 @@ export default function VisualEditorPanel({
                   rows={2}
                   value={period.labelHtml}
                   onChange={(e) => {
-                    const periods = [...p4Data.periods];
-                    periods[i] = { ...period, labelHtml: e.target.value };
-                    commitP4({ ...p4Data, periods });
+                    commitP4((current) => {
+                      const periods = [...current.periods];
+                      periods[i] = { ...period, labelHtml: e.target.value };
+                      return { ...current, periods };
+                    });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs font-mono"
                 />
                 <input
                   value={period.amount}
                   onChange={(e) => {
-                    const periods = [...p4Data.periods];
-                    periods[i] = { ...period, amount: e.target.value };
-                    commitP4({ ...p4Data, periods });
+                    commitP4((current) => {
+                      const periods = [...current.periods];
+                      periods[i] = { ...period, amount: e.target.value };
+                      return { ...current, periods };
+                    });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
@@ -468,7 +514,10 @@ export default function VisualEditorPanel({
                     type="button"
                     className="text-xs text-red-400 hover:underline"
                     onClick={() =>
-                      commitP4({ ...p4Data, periods: p4Data.periods.filter((_, j) => j !== i) })
+                      commitP4((current) => ({
+                        ...current,
+                        periods: current.periods.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     Eliminar periodo
@@ -480,32 +529,32 @@ export default function VisualEditorPanel({
             <input
               value={p4Data.chartTitle ?? ''}
               placeholder="Título del gráfico"
-              onChange={(e) => commitP4({ ...p4Data, chartTitle: e.target.value })}
+              onChange={(e) => commitP4({ chartTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs mb-1"
             />
             <input
               value={p4Data.chartNote ?? ''}
               placeholder="Nota bajo el gráfico"
-              onChange={(e) => commitP4({ ...p4Data, chartNote: e.target.value })}
+              onChange={(e) => commitP4({ chartNote: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs mb-1"
             />
             <textarea
               rows={2}
               value={p4Data.breakdownEyebrowHtml ?? ''}
               placeholder="Etiqueta desglose (HTML)"
-              onChange={(e) => commitP4({ ...p4Data, breakdownEyebrowHtml: e.target.value })}
+              onChange={(e) => commitP4({ breakdownEyebrowHtml: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs font-mono mb-1"
             />
             <input
               value={p4Data.breakdownKicker ?? ''}
               placeholder="Subtítulo desglose"
-              onChange={(e) => commitP4({ ...p4Data, breakdownKicker: e.target.value })}
+              onChange={(e) => commitP4({ breakdownKicker: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs mb-1"
             />
             <input
               value={p4Data.breakdownTitle ?? ''}
               placeholder="Título líneas de cobro"
-              onChange={(e) => commitP4({ ...p4Data, breakdownTitle: e.target.value })}
+              onChange={(e) => commitP4({ breakdownTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
             />
           </div>
@@ -516,28 +565,38 @@ export default function VisualEditorPanel({
                 <input
                   value={svc.title}
                   onChange={(e) => {
-                    const services = [...p4Data.services];
-                    services[i] = { ...svc, title: e.target.value, chartName: e.target.value };
-                    commitP4({ ...p4Data, services });
+                    commitP4((current) => {
+                      const services = [...current.services];
+                      services[i] = { ...svc, title: e.target.value, chartName: e.target.value };
+                      return { ...current, services };
+                    });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
                 />
                 <input
                   value={svc.qtyLabel}
                   onChange={(e) => {
-                    const services = [...p4Data.services];
-                    const qtyLabel = e.target.value;
-                    services[i] = { ...svc, qtyLabel, includeInChart: !/ajuste/i.test(qtyLabel) };
-                    commitP4({ ...p4Data, services });
+                    commitP4((current) => {
+                      const services = [...current.services];
+                      const qtyLabel = e.target.value;
+                      services[i] = {
+                        ...svc,
+                        qtyLabel,
+                        includeInChart: !/ajuste/i.test(qtyLabel),
+                      };
+                      return { ...current, services };
+                    });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
                 <input
                   value={svc.price}
                   onChange={(e) => {
-                    const services = [...p4Data.services];
-                    services[i] = { ...svc, price: e.target.value };
-                    commitP4({ ...p4Data, services });
+                    commitP4((current) => {
+                      const services = [...current.services];
+                      services[i] = { ...svc, price: e.target.value };
+                      return { ...current, services };
+                    });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
@@ -546,29 +605,36 @@ export default function VisualEditorPanel({
                     type="checkbox"
                     checked={svc.includeInChart}
                     onChange={(e) => {
-                      const services = [...p4Data.services];
-                      services[i] = { ...svc, includeInChart: e.target.checked };
-                      commitP4({ ...p4Data, services });
+                      commitP4((current) => {
+                        const services = [...current.services];
+                        services[i] = { ...svc, includeInChart: e.target.checked };
+                        return { ...current, services };
+                      });
                     }}
                   />
                   Incluir en gráfico
                 </label>
                 {renderIconControls(svc.visualType, svc.icon, svc.imageSrc, (patch) => {
-                  const services = [...p4Data.services];
-                  services[i] = {
-                    ...svc,
-                    visualType: patch.visualType ?? svc.visualType,
-                    icon: patch.icon ?? svc.icon,
-                    imageSrc: patch.imageSrc ?? svc.imageSrc,
-                  };
-                  commitP4({ ...p4Data, services });
+                  commitP4((current) => {
+                    const services = [...current.services];
+                    services[i] = {
+                      ...svc,
+                      visualType: patch.visualType ?? svc.visualType,
+                      icon: patch.icon ?? svc.icon,
+                      imageSrc: patch.imageSrc ?? svc.imageSrc,
+                    };
+                    return { ...current, services };
+                  });
                 })}
                 {p4Data.services.length > 1 && (
                   <button
                     type="button"
                     className="text-xs text-red-400 hover:underline"
                     onClick={() =>
-                      commitP4({ ...p4Data, services: p4Data.services.filter((_, j) => j !== i) })
+                      commitP4((current) => ({
+                        ...current,
+                        services: current.services.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     Eliminar línea
@@ -587,21 +653,21 @@ export default function VisualEditorPanel({
             <input
               value={ap5Data.reinvTitle}
               placeholder="Título reinversión"
-              onChange={(e) => commitAp5({ ...ap5Data, reinvTitle: e.target.value })}
+              onChange={(e) => commitAp5({ reinvTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
             />
             <textarea
               rows={2}
               value={ap5Data.reinvIntro}
               placeholder="Intro reinversión"
-              onChange={(e) => commitAp5({ ...ap5Data, reinvIntro: e.target.value })}
+              onChange={(e) => commitAp5({ reinvIntro: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <textarea
               rows={2}
               value={ap5Data.reinvNote}
               placeholder="Nota de reinversión"
-              onChange={(e) => commitAp5({ ...ap5Data, reinvNote: e.target.value })}
+              onChange={(e) => commitAp5({ reinvNote: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <div className="flex items-center justify-between">
@@ -610,10 +676,10 @@ export default function VisualEditorPanel({
                 type="button"
                 className="text-xs text-[#4a6fa5] hover:underline"
                 onClick={() =>
-                  commitAp5({
-                    ...ap5Data,
-                    reinvTags: [...ap5Data.reinvTags, { value: '$ 0', year: 'Año' }],
-                  })
+                  commitAp5((current) => ({
+                    ...current,
+                    reinvTags: [...current.reinvTags, { value: '$ 0', year: 'Año' }],
+                  }))
                 }
               >
                 + Año
@@ -624,18 +690,22 @@ export default function VisualEditorPanel({
                 <input
                   value={tag.value}
                   onChange={(e) => {
-                    const reinvTags = [...ap5Data.reinvTags];
+                    commitAp5((current) => {
+                    const reinvTags = [...current.reinvTags];
                     reinvTags[i] = { ...tag, value: e.target.value };
-                    commitAp5({ ...ap5Data, reinvTags });
+                    return { ...current, reinvTags };
+                  });
                   }}
                   className="px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
                 <input
                   value={tag.year}
                   onChange={(e) => {
-                    const reinvTags = [...ap5Data.reinvTags];
+                    commitAp5((current) => {
+                    const reinvTags = [...current.reinvTags];
                     reinvTags[i] = { ...tag, year: e.target.value };
-                    commitAp5({ ...ap5Data, reinvTags });
+                    return { ...current, reinvTags };
+                  });
                   }}
                   className="px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
@@ -644,10 +714,10 @@ export default function VisualEditorPanel({
                     type="button"
                     className="col-span-2 text-xs text-red-400 hover:underline"
                     onClick={() =>
-                      commitAp5({
-                        ...ap5Data,
-                        reinvTags: ap5Data.reinvTags.filter((_, j) => j !== i),
-                      })
+                      commitAp5((current) => ({
+                        ...current,
+                        reinvTags: current.reinvTags.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     Eliminar año
@@ -658,13 +728,13 @@ export default function VisualEditorPanel({
             <input
               value={ap5Data.apoyosHeadline}
               placeholder="Título panel apoyos"
-              onChange={(e) => commitAp5({ ...ap5Data, apoyosHeadline: e.target.value })}
+              onChange={(e) => commitAp5({ apoyosHeadline: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
             />
             <input
               value={ap5Data.apoyosChip}
               placeholder="Etiqueta chip apoyos"
-              onChange={(e) => commitAp5({ ...ap5Data, apoyosChip: e.target.value })}
+              onChange={(e) => commitAp5({ apoyosChip: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <p className="text-xs text-slate-500 pt-1">Icono del encabezado del panel</p>
@@ -673,15 +743,15 @@ export default function VisualEditorPanel({
               ap5Data.headVisual?.icon ?? 'fa-gift',
               ap5Data.headVisual?.imageSrc ?? '',
               (patch) =>
-                commitAp5({
-                  ...ap5Data,
+                commitAp5((current) => ({
+                  ...current,
                   headVisual: {
-                    ...(ap5Data.headVisual ?? defaultHeadVisual()),
-                    visualType: patch.visualType ?? ap5Data.headVisual?.visualType ?? 'icon',
-                    icon: patch.icon ?? ap5Data.headVisual?.icon ?? 'fa-gift',
-                    imageSrc: patch.imageSrc ?? ap5Data.headVisual?.imageSrc ?? '',
+                    ...(current.headVisual ?? defaultHeadVisual()),
+                    visualType: patch.visualType ?? current.headVisual?.visualType ?? 'icon',
+                    icon: patch.icon ?? current.headVisual?.icon ?? 'fa-gift',
+                    imageSrc: patch.imageSrc ?? current.headVisual?.imageSrc ?? '',
                   },
-                }),
+                })),
             )}
           </div>
           <div className="flex items-center justify-between mt-3 mb-2">
@@ -692,7 +762,7 @@ export default function VisualEditorPanel({
               type="button"
               className="text-xs px-2 py-1 rounded bg-[#0e2455] hover:bg-[#4a6fa5] text-white"
               onClick={() =>
-                commitAp5({ ...ap5Data, cards: [...ap5Data.cards, defaultApoyoCard()] })
+                commitAp5((current) => ({ ...current, cards: [...current.cards, defaultApoyoCard()] }))
               }
             >
               + Añadir herramienta
@@ -711,7 +781,10 @@ export default function VisualEditorPanel({
                     className="text-xs text-red-400 hover:underline disabled:opacity-40"
                     disabled={ap5Data.cards.length <= 1}
                     onClick={() =>
-                      commitAp5({ ...ap5Data, cards: ap5Data.cards.filter((_, j) => j !== i) })
+                      commitAp5((current) => ({
+                        ...current,
+                        cards: current.cards.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     Eliminar
@@ -722,9 +795,11 @@ export default function VisualEditorPanel({
                   value={card.label}
                   placeholder="Descripción de la herramienta"
                   onChange={(e) => {
-                    const cards = [...ap5Data.cards];
+                    commitAp5((current) => {
+                    const cards = [...current.cards];
                     cards[i] = { ...card, label: e.target.value };
-                    commitAp5({ ...ap5Data, cards });
+                    return { ...current, cards };
+                  });
                   }}
                   className="w-full px-2 py-1.5 rounded bg-slate-900 border border-slate-600 text-sm"
                 />
@@ -733,23 +808,27 @@ export default function VisualEditorPanel({
                     type="checkbox"
                     checked={card.wide}
                     onChange={(e) => {
-                      const cards = [...ap5Data.cards];
+                      commitAp5((current) => {
+                      const cards = [...current.cards];
                       cards[i] = { ...card, wide: e.target.checked };
-                      commitAp5({ ...ap5Data, cards });
+                      return { ...current, cards };
+                    });
                     }}
                     className="rounded"
                   />
                   Tarjeta ancha (fila completa)
                 </label>
                 {renderIconControls(card.visualType, card.icon, card.imageSrc, (patch) => {
-                  const cards = [...ap5Data.cards];
-                  cards[i] = {
-                    ...card,
-                    visualType: patch.visualType ?? card.visualType,
-                    icon: patch.icon ?? card.icon,
-                    imageSrc: patch.imageSrc ?? card.imageSrc,
-                  };
-                  commitAp5({ ...ap5Data, cards });
+                  commitAp5((current) => {
+                    const cards = [...current.cards];
+                    cards[i] = {
+                      ...card,
+                      visualType: patch.visualType ?? card.visualType,
+                      icon: patch.icon ?? card.icon,
+                      imageSrc: patch.imageSrc ?? card.imageSrc,
+                    };
+                    return { ...current, cards };
+                  });
                 })}
               </div>
             ))}
@@ -766,31 +845,31 @@ export default function VisualEditorPanel({
             <input
               value={p2bData.heroTitle}
               placeholder="Título bloque principal"
-              onChange={(e) => commitP2b({ ...p2bData, heroTitle: e.target.value })}
+              onChange={(e) => commitP2b({ heroTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
             />
             <input
               value={p2bData.valHubTitle}
               placeholder="Título panel valores"
-              onChange={(e) => commitP2b({ ...p2bData, valHubTitle: e.target.value })}
+              onChange={(e) => commitP2b({ valHubTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <input
               value={p2bData.valHubSubtitle}
               placeholder="Subtítulo panel valores"
-              onChange={(e) => commitP2b({ ...p2bData, valHubSubtitle: e.target.value })}
+              onChange={(e) => commitP2b({ valHubSubtitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <input
               value={p2bData.whyChooseTitle}
               placeholder="Título — ¿Por qué elegirnos?"
-              onChange={(e) => commitP2b({ ...p2bData, whyChooseTitle: e.target.value })}
+              onChange={(e) => commitP2b({ whyChooseTitle: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <input
               value={p2bData.whyChooseBadge}
               placeholder="Etiqueta del panel"
-              onChange={(e) => commitP2b({ ...p2bData, whyChooseBadge: e.target.value })}
+              onChange={(e) => commitP2b({ whyChooseBadge: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <label className="block text-xs text-slate-400 mt-2 mb-1">Cuerpo (párrafo principal)</label>
@@ -798,13 +877,13 @@ export default function VisualEditorPanel({
               value={p2bData.whyChooseBody}
               rows={4}
               placeholder="Texto descriptivo. Puede usar <strong> para resaltar."
-              onChange={(e) => commitP2b({ ...p2bData, whyChooseBody: e.target.value })}
+              onChange={(e) => commitP2b({ whyChooseBody: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs leading-relaxed"
             />
             <input
               value={p2bData.whyChoosePointsLabel}
               placeholder="Título de la lista de ventajas"
-              onChange={(e) => commitP2b({ ...p2bData, whyChoosePointsLabel: e.target.value })}
+              onChange={(e) => commitP2b({ whyChoosePointsLabel: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs mt-2"
             />
             <div className="flex items-center justify-between mt-2 mb-1">
@@ -813,10 +892,10 @@ export default function VisualEditorPanel({
                 type="button"
                 className="text-xs text-[#4a6fa5] hover:underline"
                 onClick={() =>
-                  commitP2b({
-                    ...p2bData,
-                    whyChoosePoints: [...p2bData.whyChoosePoints, 'Nuevo punto'],
-                  })
+                  commitP2b((current) => ({
+                    ...current,
+                    whyChoosePoints: [...current.whyChoosePoints, 'Nuevo punto'],
+                  }))
                 }
               >
                 + Punto
@@ -829,9 +908,11 @@ export default function VisualEditorPanel({
                     value={point}
                     placeholder={`Punto ${i + 1}`}
                     onChange={(e) => {
-                      const whyChoosePoints = [...p2bData.whyChoosePoints];
+                      commitP2b((current) => {
+                      const whyChoosePoints = [...current.whyChoosePoints];
                       whyChoosePoints[i] = e.target.value;
-                      commitP2b({ ...p2bData, whyChoosePoints });
+                      return { ...current, whyChoosePoints };
+                    });
                     }}
                     className="flex-1 px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                   />
@@ -839,10 +920,10 @@ export default function VisualEditorPanel({
                     type="button"
                     className="text-xs text-red-400 px-2"
                     onClick={() =>
-                      commitP2b({
-                        ...p2bData,
-                        whyChoosePoints: p2bData.whyChoosePoints.filter((_, j) => j !== i),
-                      })
+                      commitP2b((current) => ({
+                        ...current,
+                        whyChoosePoints: current.whyChoosePoints.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     ×
@@ -857,10 +938,10 @@ export default function VisualEditorPanel({
               type="button"
               className="text-xs text-[#4a6fa5] hover:underline"
               onClick={() =>
-                commitP2b({
-                  ...p2bData,
-                  valChips: [...p2bData.valChips, defaultP2bChip('Nuevo valor')],
-                })
+                commitP2b((current) => ({
+                  ...current,
+                  valChips: [...current.valChips, defaultP2bChip('Nuevo valor')],
+                }))
               }
             >
               + Valor
@@ -873,9 +954,11 @@ export default function VisualEditorPanel({
                   value={chip.label}
                   placeholder="Nombre del valor"
                   onChange={(e) => {
-                    const valChips = [...p2bData.valChips];
+                    commitP2b((current) => {
+                    const valChips = [...current.valChips];
                     valChips[i] = { ...chip, label: e.target.value };
-                    commitP2b({ ...p2bData, valChips });
+                    return { ...current, valChips };
+                  });
                   }}
                   className="px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs col-span-2"
                 />
@@ -883,9 +966,11 @@ export default function VisualEditorPanel({
                   value={chip.key}
                   placeholder="Clave interna"
                   onChange={(e) => {
-                    const valChips = [...p2bData.valChips];
-                    valChips[i] = { ...chip, key: e.target.value };
-                    commitP2b({ ...p2bData, valChips });
+                    commitP2b((current) => {
+                      const valChips = [...current.valChips];
+                      valChips[i] = { ...chip, key: e.target.value };
+                      return { ...current, valChips };
+                    });
                   }}
                   className="px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
@@ -894,11 +979,13 @@ export default function VisualEditorPanel({
                     type="checkbox"
                     checked={chip.active}
                     onChange={(e) => {
-                      const valChips = p2bData.valChips.map((c, j) => ({
-                        ...c,
-                        active: j === i ? e.target.checked : false,
+                      commitP2b((current) => ({
+                        ...current,
+                        valChips: current.valChips.map((c, j) => ({
+                          ...c,
+                          active: j === i ? e.target.checked : false,
+                        })),
                       }));
-                      commitP2b({ ...p2bData, valChips });
                     }}
                   />
                   Activo
@@ -908,7 +995,10 @@ export default function VisualEditorPanel({
                     type="button"
                     className="text-xs text-red-400 hover:underline col-span-2"
                     onClick={() =>
-                      commitP2b({ ...p2bData, valChips: p2bData.valChips.filter((_, j) => j !== i) })
+                      commitP2b((current) => ({
+                        ...current,
+                        valChips: current.valChips.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     Eliminar valor
@@ -923,7 +1013,7 @@ export default function VisualEditorPanel({
               type="button"
               className="text-xs text-[#4a6fa5] hover:underline"
               onClick={() =>
-                commitP2b({ ...p2bData, certs: [...p2bData.certs, defaultP2bCert()] })
+                commitP2b((current) => ({ ...current, certs: [...current.certs, defaultP2bCert()] }))
               }
             >
               + Certificación
@@ -932,7 +1022,7 @@ export default function VisualEditorPanel({
           <input
             value={p2bData.certsSectionTitle}
             placeholder="Título sección certificaciones"
-            onChange={(e) => commitP2b({ ...p2bData, certsSectionTitle: e.target.value })}
+            onChange={(e) => commitP2b({ certsSectionTitle: e.target.value })}
             className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs mb-2"
           />
           <ul className="space-y-2">
@@ -942,9 +1032,11 @@ export default function VisualEditorPanel({
                   value={cert.title}
                   placeholder="Nombre certificación"
                   onChange={(e) => {
-                    const certs = [...p2bData.certs];
+                    commitP2b((current) => {
+                    const certs = [...current.certs];
                     certs[i] = { ...cert, title: e.target.value };
-                    commitP2b({ ...p2bData, certs });
+                    return { ...current, certs };
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
                 />
@@ -952,9 +1044,11 @@ export default function VisualEditorPanel({
                   value={cert.subtitle}
                   placeholder="Descripción"
                   onChange={(e) => {
-                    const certs = [...p2bData.certs];
+                    commitP2b((current) => {
+                    const certs = [...current.certs];
                     certs[i] = { ...cert, subtitle: e.target.value };
-                    commitP2b({ ...p2bData, certs });
+                    return { ...current, certs };
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
@@ -980,7 +1074,10 @@ export default function VisualEditorPanel({
                     type="button"
                     className="text-xs text-red-400 hover:underline"
                     onClick={() =>
-                      commitP2b({ ...p2bData, certs: p2bData.certs.filter((_, j) => j !== i) })
+                      commitP2b((current) => ({
+                        ...current,
+                        certs: current.certs.filter((_, j) => j !== i),
+                      }))
                     }
                   >
                     Eliminar certificación
@@ -1001,7 +1098,7 @@ export default function VisualEditorPanel({
             <button
               type="button"
               className="text-xs text-[#4a6fa5] hover:underline"
-              onClick={() => commitP2Slides([...p2Slides, defaultP2Slide()])}
+              onClick={() => commitP2Slides((slides) => [...slides, defaultP2Slide()])}
             >
               + Añadir slide
             </button>
@@ -1014,10 +1111,12 @@ export default function VisualEditorPanel({
                   value={slide.title}
                   placeholder="Título"
                   onChange={(e) => {
-                    const next = [...p2Slides];
+                    commitP2Slides((slides) => {
+                    const next = [...slides];
                     const title = e.target.value;
                     next[i] = { ...slide, title, ariaLabel: title || slide.ariaLabel };
-                    commitP2Slides(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
                 />
@@ -1025,18 +1124,22 @@ export default function VisualEditorPanel({
                   value={slide.subtitle}
                   placeholder="Subtítulo / dirección"
                   onChange={(e) => {
-                    const next = [...p2Slides];
+                    commitP2Slides((slides) => {
+                    const next = [...slides];
                     next[i] = { ...slide, subtitle: e.target.value };
-                    commitP2Slides(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
                 <select
                   value={slide.icon}
                   onChange={(e) => {
-                    const next = [...p2Slides];
+                    commitP2Slides((slides) => {
+                    const next = [...slides];
                     next[i] = { ...slide, icon: e.target.value };
-                    commitP2Slides(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 >
@@ -1058,9 +1161,11 @@ export default function VisualEditorPanel({
                       if (!f) return;
                       uploadFile(f)
                         .then((storageRef) => {
-                          const next = [...p2Slides];
-                          next[i] = { ...slide, imageSrc: storageRef };
-                          commitP2Slides(next);
+                          commitP2Slides((slides) => {
+                            const next = [...slides];
+                            next[i] = { ...slide, imageSrc: storageRef };
+                            return next;
+                          });
                         })
                         .catch((err) =>
                           alert(err instanceof Error ? err.message : 'Error al subir'),
@@ -1073,9 +1178,11 @@ export default function VisualEditorPanel({
                   value={slide.imageAlt}
                   placeholder="Texto alternativo imagen"
                   onChange={(e) => {
-                    const next = [...p2Slides];
+                    commitP2Slides((slides) => {
+                    const next = [...slides];
                     next[i] = { ...slide, imageAlt: e.target.value };
-                    commitP2Slides(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
@@ -1083,7 +1190,7 @@ export default function VisualEditorPanel({
                   <button
                     type="button"
                     className="text-xs text-red-400 hover:underline"
-                    onClick={() => commitP2Slides(p2Slides.filter((_, j) => j !== i))}
+                    onClick={() => commitP2Slides((slides) => slides.filter((_, j) => j !== i))}
                   >
                     Eliminar slide
                   </button>
@@ -1103,7 +1210,7 @@ export default function VisualEditorPanel({
             <button
               type="button"
               className="text-xs text-[#4a6fa5] hover:underline"
-              onClick={() => commitTechProducts([...techProducts, defaultTechProduct()])}
+              onClick={() => commitTechProducts((items) => [...items, defaultTechProduct()])}
             >
               + Añadir apoyo
             </button>
@@ -1117,18 +1224,26 @@ export default function VisualEditorPanel({
                     value={p.badge}
                     placeholder="Etiqueta"
                     onChange={(e) => {
-                      const next = [...techProducts];
+                      commitTechProducts((items) => {
+                      const next = [...items];
                       next[i] = { ...p, badge: e.target.value };
-                      commitTechProducts(next);
+                      return next;
+                    });
                     }}
                     className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                   />
                   <select
                     value={p.badgeIcon}
                     onChange={(e) => {
-                      const next = [...techProducts];
-                      next[i] = { ...p, badgeIcon: e.target.value, fallbackIcon: e.target.value };
-                      commitTechProducts(next);
+                      commitTechProducts((items) => {
+                      const next = [...items];
+                      next[i] = {
+                        ...p,
+                        badgeIcon: e.target.value,
+                        fallbackIcon: e.target.value,
+                      };
+                      return next;
+                    });
                     }}
                     className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                   >
@@ -1143,14 +1258,16 @@ export default function VisualEditorPanel({
                   value={p.title}
                   placeholder="Título"
                   onChange={(e) => {
-                    const next = [...techProducts];
+                    commitTechProducts((items) => {
+                    const next = [...items];
                     const title = e.target.value;
                     next[i] = {
                       ...p,
                       title,
                       titleHtml: `<span>${title}</span>`,
                     };
-                    commitTechProducts(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-sm"
                 />
@@ -1159,18 +1276,22 @@ export default function VisualEditorPanel({
                   placeholder="Descripción"
                   rows={3}
                   onChange={(e) => {
-                    const next = [...techProducts];
+                    commitTechProducts((items) => {
+                    const next = [...items];
                     next[i] = { ...p, desc: e.target.value };
-                    commitTechProducts(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 />
                 <select
                   value={p.type}
                   onChange={(e) => {
-                    const next = [...techProducts];
+                    commitTechProducts((items) => {
+                    const next = [...items];
                     next[i] = { ...p, type: e.target.value as 'img' | 'video' };
-                    commitTechProducts(next);
+                    return next;
+                  });
                   }}
                   className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
                 >
@@ -1189,9 +1310,11 @@ export default function VisualEditorPanel({
                       if (!f) return;
                       uploadFile(f)
                         .then((storageRef) => {
-                          const next = [...techProducts];
-                          next[i] = { ...p, src: storageRef };
-                          commitTechProducts(next);
+                          commitTechProducts((items) => {
+                            const next = [...items];
+                            next[i] = { ...p, src: storageRef };
+                            return next;
+                          });
                         })
                         .catch((err) =>
                           alert(err instanceof Error ? err.message : 'Error al subir'),
@@ -1204,7 +1327,7 @@ export default function VisualEditorPanel({
                   <button
                     type="button"
                     className="text-xs text-red-400 hover:underline"
-                    onClick={() => commitTechProducts(techProducts.filter((_, j) => j !== i))}
+                    onClick={() => commitTechProducts((items) => items.filter((_, j) => j !== i))}
                   >
                     Eliminar apoyo
                   </button>
@@ -1255,14 +1378,14 @@ export default function VisualEditorPanel({
             <input
               value={benScene.kicker}
               placeholder="Etiqueta superior"
-              onChange={(e) => commitBenScene({ ...benScene, kicker: e.target.value })}
+              onChange={(e) => commitBenScene({ kicker: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
             <label className="block text-xs text-slate-400">Titular lateral (HTML)</label>
             <textarea
               value={benScene.titleHtml}
               rows={2}
-              onChange={(e) => commitBenScene({ ...benScene, titleHtml: e.target.value })}
+              onChange={(e) => commitBenScene({ titleHtml: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs font-mono"
             />
             {benScene.imageSrc && <StorageImagePreview src={benScene.imageSrc} token={token} />}
@@ -1276,8 +1399,7 @@ export default function VisualEditorPanel({
                   const f = e.target.files?.[0];
                   if (!f) return;
                   uploadFile(f)
-                    .then((storageRef) =>
-                      commitBenScene({ ...benScene, imageSrc: storageRef }),
+                    .then((storageRef) => commitBenScene({ imageSrc: storageRef }),
                     )
                     .catch((err) =>
                       alert(err instanceof Error ? err.message : 'Error al subir'),
@@ -1290,7 +1412,7 @@ export default function VisualEditorPanel({
               <button
                 type="button"
                 className="text-xs text-red-400 hover:underline"
-                onClick={() => commitBenScene({ ...benScene, imageSrc: '' })}
+                onClick={() => commitBenScene({ imageSrc: '' })}
               >
                 Quitar imagen
               </button>
@@ -1298,7 +1420,7 @@ export default function VisualEditorPanel({
             <input
               value={benScene.imageAlt}
               placeholder="Texto alternativo"
-              onChange={(e) => commitBenScene({ ...benScene, imageAlt: e.target.value })}
+              onChange={(e) => commitBenScene({ imageAlt: e.target.value })}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-600 text-xs"
             />
           </div>

@@ -199,6 +199,7 @@ export default function SlideEditor({
         <ThemeEditorPanel
           proposalId={proposalId}
           themeConfig={theme}
+          onChange={setTheme}
           onSaved={(t) => {
             setTheme(t);
             onThemeSaved?.(t);

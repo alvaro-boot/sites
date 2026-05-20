@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ThemeConfig } from '@/lib/types';
 import { DEFAULT_THEME } from '@/lib/theme';
 import { authFetch } from '@/lib/client-api';
@@ -8,6 +8,7 @@ import { authFetch } from '@/lib/client-api';
 interface ThemeEditorPanelProps {
   proposalId: string;
   themeConfig: ThemeConfig | null | undefined;
+  onChange?: (theme: ThemeConfig) => void;
   onSaved: (theme: ThemeConfig) => void;
 }
 
@@ -24,11 +25,16 @@ const LABELS: { key: keyof ThemeConfig; label: string }[] = [
 export default function ThemeEditorPanel({
   proposalId,
   themeConfig,
+  onChange,
   onSaved,
 }: ThemeEditorPanelProps) {
   const [theme, setTheme] = useState<ThemeConfig>({ ...DEFAULT_THEME, ...themeConfig });
   const [msg, setMsg] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setTheme({ ...DEFAULT_THEME, ...themeConfig });
+  }, [themeConfig]);
 
   async function save() {
     setSaving(true);
@@ -67,7 +73,13 @@ export default function ThemeEditorPanel({
             <input
               type="color"
               value={theme[key] ?? DEFAULT_THEME[key]}
-              onChange={(e) => setTheme((t) => ({ ...t, [key]: e.target.value }))}
+              onChange={(e) =>
+                setTheme((prev) => {
+                  const next = { ...prev, [key]: e.target.value };
+                  onChange?.(next);
+                  return next;
+                })
+              }
               className="w-8 h-8 rounded border-0 cursor-pointer"
             />
             <span className="text-slate-400">{label}</span>
